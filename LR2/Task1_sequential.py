@@ -1,7 +1,9 @@
 import random
 import timeit
 
-arr = [random.randint(1, 100) for _ in range(100001)]
+# Чтение массива из файла
+with open("array.txt", "r") as f:
+    arr = list(map(int, f.read().split()))
 
 def sequential_array_sum(arr):
     total = 0
