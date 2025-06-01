@@ -1,0 +1,12 @@
+#!/bin/bash
+#BSUB -J ParMatMul
+#BSUB -P ParallelComputing
+#BSUB -W 00:01
+#BSUB -n 4
+#BSUB -R "span[ptile=4]"
+#BSUB -oo par_output.log
+#BSUB -eo par_error.log
+
+gcc -fopenmp -o parallel_matmul parallel_matmul.c -lm
+export OMP_NUM_THREADS=4
+./parallel_matmul

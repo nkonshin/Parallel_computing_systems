@@ -1,0 +1,11 @@
+#!/bin/bash
+#BSUB -J ParMatVec
+#BSUB -P ParallelComputing
+#BSUB -W 00:01
+#BSUB -n 4
+#BSUB -oo par_output.log
+#BSUB -eo par_error.log
+
+gcc -fopenmp -o parallel_matvec parallel_matvec.c -lm
+export OMP_NUM_THREADS=4
+./parallel_matvec

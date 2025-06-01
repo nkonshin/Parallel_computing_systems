@@ -1,0 +1,12 @@
+#!/bin/bash
+#BSUB -J GenMatrices
+#BSUB -P ParallelComputing
+#BSUB -W 00:01
+#BSUB -n 1
+#BSUB -oo gen_output.log
+#BSUB -eo gen_error.log
+
+# Загрузка Python, если нужно
+# module load python/3.8
+
+python3 Matrix_generation.py
