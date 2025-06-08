@@ -62,57 +62,36 @@ void print_array_sample(const double* arr, int total_size, int sample_size, cons
 }
 
 int main(int argc, char* argv[]) {
-    int rank, proc_size;
+    int rank, size;
     double *array1 = NULL, *array2 = NULL;
     double *local_array1 = NULL, *local_array2 = NULL;
     double *local_result_add = NULL, *local_result_sub = NULL;
     double *local_result_mul = NULL, *local_result_div = NULL;
     double *result_add = NULL, *result_sub = NULL, *result_mul = NULL, *result_div = NULL;
     int global_size = 0, local_size = 0;
-    int *recvcounts = NULL, *displs = NULL;
     double start_time, end_time, compute_time = 0, comm_time = 0;
     
     // Инициализация MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &proc_size);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
     
     if (rank == 0) {
         printf("=== ПАРАЛЛЕЛЬНАЯ ВЕРСИЯ ===\n");
         
         // Чтение массивов из файлов (только процесс 0)
         array1 = read_array_from_file("array1.txt", &global_size);
-        if (!array1) {
-            fprintf(stderr, "Ошибка при чтении первого массива\n");
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
-        
         array2 = read_array_from_file("array2.txt", &local_size); // Используем local_size как временную переменную
-        if (!array2) {
-            fprintf(stderr, "Ошибка при чтении второго массива\n");
-            free(array1);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
         
         // Проверка размеров массивов
         if (global_size != local_size) {
             fprintf(stderr, "Ошибка: массивы имеют разный размер (%d и %d)\n", 
                     global_size, local_size);
-            free(array1);
-            free(array2);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
-        
-        // Проверка на пустые массивы
-        if (global_size == 0) {
-            fprintf(stderr, "Ошибка: массивы пусты\n");
-            free(array1);
-            free(array2);
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
         
         printf("Размер массивов: %d элементов\n", global_size);
-        printf("Используется %d процессов\n", proc_size);
+        printf("Используется %d процессов\n", size);
     }
     
     // Синхронизация перед началом работы
@@ -122,39 +101,18 @@ int main(int argc, char* argv[]) {
     // Рассылаем размер массивов всем процессам
     MPI_Bcast(&global_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
     
-    // Рассылаем размер массивов всем процессам
-    MPI_Bcast(&global_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    
-    // Проверка на пустые массивы
-    if (global_size == 0) {
-        if (rank == 0) {
-            fprintf(stderr, "Ошибка: массивы пусты\n");
-        }
-        MPI_Finalize();
-        return 1;
-    }
-    
     // Вычисляем размер локальной части для каждого процесса
-    local_size = global_size / proc_size;
-    int remainder = global_size % proc_size;
+    local_size = global_size / size;
+    int remainder = global_size % size;
     
     // Массивы для хранения размеров и смещений
-    recvcounts = (int*)malloc(proc_size * sizeof(int));
-    displs = (int*)malloc(proc_size * sizeof(int));
-    
-    if (!recvcounts || !displs) {
-        fprintf(stderr, "Ошибка выделения памяти для recvcounts/displs\n");
-        if (rank == 0) {
-            if (array1) free(array1);
-            if (array2) free(array2);
-        }
-        MPI_Abort(MPI_COMM_WORLD, 1);
-    }
+    int* recvcounts = (int*)malloc(size * sizeof(int));
+    int* displs = (int*)malloc(size * sizeof(int));
     
     // Вычисляем размеры частей и смещения
     int offset = 0;
-    for (int i = 0; i < proc_size; i++) {
-        recvcounts[i] = global_size / proc_size + (i < remainder ? 1 : 0);
+    for (int i = 0; i < size; i++) {
+        recvcounts[i] = global_size / size + (i < remainder ? 1 : 0);
         displs[i] = offset;
         offset += recvcounts[i];
     }
@@ -165,19 +123,6 @@ int main(int argc, char* argv[]) {
     // Выделяем память под локальные части массивов
     local_array1 = (double*)malloc(local_size * sizeof(double));
     local_array2 = (double*)malloc(local_size * sizeof(double));
-    
-    if (!local_array1 || !local_array2) {
-        fprintf(stderr, "Ошибка выделения памяти для локальных массивов\n");
-        if (local_array1) free(local_array1);
-        if (local_array2) free(local_array2);
-        free(recvcounts);
-        free(displs);
-        if (rank == 0) {
-            if (array1) free(array1);
-            if (array2) free(array2);
-        }
-        MPI_Abort(MPI_COMM_WORLD, 1);
-    }
     
     // Распределяем данные между процессами
     MPI_Scatterv(array1, recvcounts, displs, MPI_DOUBLE,
@@ -193,23 +138,6 @@ int main(int argc, char* argv[]) {
     local_result_sub = (double*)malloc(local_size * sizeof(double));
     local_result_mul = (double*)malloc(local_size * sizeof(double));
     local_result_div = (double*)malloc(local_size * sizeof(double));
-    
-    if (!local_result_add || !local_result_sub || !local_result_mul || !local_result_div) {
-        fprintf(stderr, "Ошибка выделения памяти для результатов\n");
-        if (local_result_add) free(local_result_add);
-        if (local_result_sub) free(local_result_sub);
-        if (local_result_mul) free(local_result_mul);
-        if (local_result_div) free(local_result_div);
-        free(local_array1);
-        free(local_array2);
-        free(recvcounts);
-        free(displs);
-        if (rank == 0) {
-            if (array1) free(array1);
-            if (array2) free(array2);
-        }
-        MPI_Abort(MPI_COMM_WORLD, 1);
-    }
     
     // Выполняем вычисления над локальными частями
     double compute_start = MPI_Wtime();
@@ -231,25 +159,6 @@ int main(int argc, char* argv[]) {
         result_sub = (double*)malloc(global_size * sizeof(double));
         result_mul = (double*)malloc(global_size * sizeof(double));
         result_div = (double*)malloc(global_size * sizeof(double));
-        
-        if (!result_add || !result_sub || !result_mul || !result_div) {
-            fprintf(stderr, "Ошибка выделения памяти для результатов сбора\n");
-            if (result_add) free(result_add);
-            if (result_sub) free(result_sub);
-            if (result_mul) free(result_mul);
-            if (result_div) free(result_div);
-            free(local_result_add);
-            free(local_result_sub);
-            free(local_result_mul);
-            free(local_result_div);
-            free(local_array1);
-            free(local_array2);
-            free(recvcounts);
-            free(displs);
-            if (array1) free(array1);
-            if (array2) free(array2);
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
     }
     
     double comm_start = MPI_Wtime();
@@ -292,23 +201,23 @@ int main(int argc, char* argv[]) {
     }
     
     // Освобождаем память
-    if (local_array1) free(local_array1);
-    if (local_array2) free(local_array2);
-    if (local_result_add) free(local_result_add);
-    if (local_result_sub) free(local_result_sub);
-    if (local_result_mul) free(local_result_mul);
-    if (local_result_div) free(local_result_div);
-    if (recvcounts) free(recvcounts);
-    if (displs) free(displs);
-    
     if (rank == 0) {
-        if (array1) free(array1);
-        if (array2) free(array2);
-        if (result_add) free(result_add);
-        if (result_sub) free(result_sub);
-        if (result_mul) free(result_mul);
-        if (result_div) free(result_div);
+        free(array1);
+        free(array2);
+        free(result_add);
+        free(result_sub);
+        free(result_mul);
+        free(result_div);
     }
+    
+    free(local_array1);
+    free(local_array2);
+    free(local_result_add);
+    free(local_result_sub);
+    free(local_result_mul);
+    free(local_result_div);
+    free(recvcounts);
+    free(displs);
     
     // Завершаем MPI
     MPI_Finalize();
