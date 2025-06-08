@@ -7,6 +7,5 @@
 #BSUB -oo par_output.log
 #BSUB -eo par_error.log
 
-gcc -fopenmp -o parallel_matmul parallel_matmul.c -lm
 export OMP_NUM_THREADS=4
-./parallel_matmul
+.parallel_array_ops

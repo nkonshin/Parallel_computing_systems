@@ -100,9 +100,8 @@ void perform_matrix_operations_parallel(double** matrix1, double** matrix2,
     }
 }
 
-// Функция для выполнения операций над первыми max_elements элементами
-// и вывода первых 5 результатов
-void perform_operations_and_print(double** matrix1, double** matrix2, int rows, int cols, int max_elements) {
+// Функция для выполнения операций над матрицами и вывода первых 5 результатов
+void perform_operations_and_print(double** matrix1, double** matrix2, int rows, int cols, int num_threads) {
     printf("Первые 5 результатов операций:\n");
     printf("Индекс |   Сложение  |  Вычитание  | Умножение  |  Деление   \n");
     printf("-------+-------------+-------------+------------+-------------\n");
@@ -111,11 +110,10 @@ void perform_operations_and_print(double** matrix1, double** matrix2, int rows, 
     int printed = 0;
     
     // Используем директиву OpenMP для параллельного выполнения
-    #pragma omp parallel for collapse(2) schedule(static)
+    #pragma omp parallel for private(i, j) num_threads(num_threads) schedule(static, chunk_size)
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             int idx = i * cols + j;
-            if (idx >= max_elements) continue;
             
             double a = matrix1[i][j];
             double b = matrix2[i][j];
@@ -145,7 +143,7 @@ void perform_operations_and_print(double** matrix1, double** matrix2, int rows, 
             }
         }
     }
-    printf("\nВсего обработано элементов: %d\n\n", max_elements);
+    printf("\nВсего обработано элементов: %d\n\n", rows * cols);
 }
 
 int main(int argc, char* argv[]) {
@@ -239,9 +237,8 @@ int main(int argc, char* argv[]) {
     printf("Размер матриц: %dx%d (всего %d элементов)\n", rows, cols, rows * cols);
     printf("Время выполнения: %.6f секунд\n", end_time - start_time);
     
-    // Выполняем операции и выводим результаты для первых 50,000 элементов
-    const int MAX_ELEMENTS = 50000;
-    perform_operations_and_print(matrix1, matrix2, rows, cols, MAX_ELEMENTS);
+    // Выполняем операции и выводим результаты
+    perform_operations_and_print(matrix1, matrix2, rows, cols, num_threads);
     
     // Вычисляем и выводим скорость обработки
     double total_elements = (double)(rows * cols);

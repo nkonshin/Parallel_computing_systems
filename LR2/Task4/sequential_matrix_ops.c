@@ -94,9 +94,8 @@ void perform_matrix_operations(double** matrix1, double** matrix2,
     }
 }
 
-// Функция для выполнения операций над первыми max_elements элементами
-// и вывода первых 5 результатов
-void perform_operations_and_print(double** matrix1, double** matrix2, int rows, int cols, int max_elements) {
+// Функция для выполнения операций над матрицами и вывода первых 5 результатов
+void perform_operations_and_print(double** matrix1, double** matrix2, int rows, int cols) {
     printf("Первые 5 результатов операций:\n");
     printf("Индекс |   Сложение  |  Вычитание  | Умножение  |  Деление   \n");
     printf("-------+-------------+-------------+------------+-------------\n");
@@ -104,8 +103,8 @@ void perform_operations_and_print(double** matrix1, double** matrix2, int rows, 
     int count = 0;
     int printed = 0;
     
-    for (int i = 0; i < rows && count < max_elements; i++) {
-        for (int j = 0; j < cols && count < max_elements; j++) {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
             double a = matrix1[i][j];
             double b = matrix2[i][j];
             
@@ -132,7 +131,7 @@ void perform_operations_and_print(double** matrix1, double** matrix2, int rows, 
             count++;
         }
     }
-    printf("\nВсего обработано элементов: %d\n\n", count);
+    printf("\nВсего обработано элементов: %d\n\n", rows * cols);
 }
 
 int main() {
@@ -221,9 +220,8 @@ int main() {
     double total_operations = (double)(rows * cols) * 4.0;
     printf("Скорость: %.2f операций/сек\n", total_operations / cpu_time_used);
     
-    // Выполняем операции и выводим результаты для первых 50,000 элементов
-    const int MAX_ELEMENTS = 50000;
-    perform_operations_and_print(matrix1, matrix2, rows, cols, MAX_ELEMENTS);
+    // Выполняем операции и выводим результаты
+    perform_operations_and_print(matrix1, matrix2, rows, cols);
     
     // Освобождение памяти
     free_matrix(matrix1, rows);

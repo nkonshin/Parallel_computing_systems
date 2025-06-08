@@ -5,6 +5,4 @@
 #BSUB -n 1
 #BSUB -oo seq_output.log
 #BSUB -eo seq_error.log
-
-gcc -o sequential_matmul sequential_matmul.c -lm
-./sequential_matmul
+./sequential_array_ops
