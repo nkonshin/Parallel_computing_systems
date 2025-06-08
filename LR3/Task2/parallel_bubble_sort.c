@@ -127,27 +127,32 @@ void print_array_sample(const int* arr, int size, const char* label, int rank) {
 }
 
 int main(int argc, char* argv[]) {
-    int rank, size;
+    int rank, proc_size;
     int* global_array = NULL;
     int global_size = 0;
     double start_time, end_time, local_sort_time = 0, merge_time = 0;
+    int* local_array = NULL;
+    int* recvcounts = NULL;
+    int* displs = NULL;
     
     // Инициализация MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_size(MPI_COMM_WORLD, &proc_size);
     
+    // Инициализация массивов, чтобы избежать освобождения неинициализированных указателей
     if (rank == 0) {
         printf("=== ПАРАЛЛЕЛЬНАЯ ПУЗЫРЬКОВАЯ СОРТИРОВКА ===\n");
-        printf("Используется %d процессов\n", size);
+        printf("Используется %d процессов\n", proc_size);
         
-        // Чтение массива из файла (только процесс 0)
         const char* filename = "array.txt";
         printf("Чтение массива из файла %s...\n", filename);
         global_array = read_array_from_file(filename, &global_size);
+        if (!global_array) {
+            fprintf(stderr, "Ошибка при чтении массива\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
         printf("Прочитано %d элементов\n", global_size);
-        
-        // Выводим образец несортированного массива
         print_array_sample(global_array, global_size, "Несортированный массив", rank);
     }
     
@@ -158,17 +163,31 @@ int main(int argc, char* argv[]) {
     // Рассылаем размер массива всем процессам
     MPI_Bcast(&global_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
     
-    // Вычисляем размер части массива для каждого процесса
-    int local_size = global_size / size;
-    int remainder = global_size % size;
+    // Проверка на случай, если размер массива меньше числа процессов
+    if (global_size == 0) {
+        if (rank == 0) {
+            fprintf(stderr, "Ошибка: массив пуст\n");
+        }
+        MPI_Finalize();
+        return 1;
+    }
     
-    // Массивы для хранения размеров и смещений при рассылке
-    int* recvcounts = (int*)malloc(size * sizeof(int));
-    int* displs = (int*)malloc(size * sizeof(int));
+    // Вычисляем размер части массива для каждого процесса
+    int local_size = global_size / proc_size;
+    int remainder = global_size % proc_size;
+    
+    // Выделяем память для массивов размеров и смещений
+    recvcounts = (int*)malloc(proc_size * sizeof(int));
+    displs = (int*)malloc(proc_size * sizeof(int));
+    
+    if (!recvcounts || !displs) {
+        fprintf(stderr, "Ошибка выделения памяти для recvcounts/displs\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
     
     // Вычисляем размеры частей и смещения
     int offset = 0;
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < proc_size; i++) {
         recvcounts[i] = local_size + (i < remainder ? 1 : 0);
         displs[i] = offset;
         offset += recvcounts[i];
@@ -176,7 +195,11 @@ int main(int argc, char* argv[]) {
     
     // Размер локальной части для текущего процесса
     local_size = recvcounts[rank];
-    int* local_array = (int*)malloc(local_size * sizeof(int));
+    local_array = (int*)malloc(local_size * sizeof(int));
+    if (!local_array) {
+        fprintf(stderr, "Ошибка выделения памяти для local_array\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
     
     // Распределяем данные между процессами
     MPI_Scatterv(global_array, recvcounts, displs, MPI_INT,
@@ -191,25 +214,30 @@ int main(int argc, char* argv[]) {
     // Собираем отсортированные части на процессе 0
     if (rank == 0) {
         // Копируем первую часть в результирующий массив
-        memcpy(global_array, local_array, local_size * sizeof(int));
-        
-        // Принимаем и объединяем остальные части
         int* temp_buffer = (int*)malloc(global_size * sizeof(int));
+        if (!temp_buffer) {
+            fprintf(stderr, "Ошибка выделения памяти для temp_buffer\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+        
+        memcpy(global_array, local_array, local_size * sizeof(int));
         int merged_size = local_size;
         
         double merge_start = MPI_Wtime();
-        for (int i = 1; i < size; i++) {
+        for (int i = 1; i < proc_size; i++) {
             int recv_size = recvcounts[i];
-            MPI_Recv(temp_buffer, recv_size, MPI_INT, i, 0, 
+            int* recv_buf = temp_buffer + merged_size;
+            
+            MPI_Recv(recv_buf, recv_size, MPI_INT, i, 0, 
                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             
             // Объединяем с уже отсортированной частью
             merge_arrays(global_array, merged_size, 
-                        temp_buffer, recv_size,
-                        temp_buffer + merged_size);
+                        recv_buf, recv_size,
+                        temp_buffer);
             
             // Копируем результат обратно в global_array
-            memcpy(global_array, temp_buffer + merged_size, 
+            memcpy(global_array, temp_buffer, 
                   (merged_size + recv_size) * sizeof(int));
             
             merged_size += recv_size;
@@ -230,6 +258,8 @@ int main(int argc, char* argv[]) {
     if (rank == 0) {
         // Проверка отсортированности
         printf("Проверка отсортированности... ");
+        fflush(stdout);
+        
         if (is_sorted(global_array, global_size)) {
             printf("массив отсортирован корректно\n");
         } else {
@@ -244,14 +274,15 @@ int main(int argc, char* argv[]) {
         printf("Время сортировки (локальные части): %.6f секунд\n", local_sort_time);
         printf("Время слияния: %.6f секунд\n", merge_time);
         
-        // Освобождаем память
-        free(global_array);
     }
     
     // Освобождаем память
-    free(local_array);
-    free(recvcounts);
-    free(displs);
+    if (local_array) free(local_array);
+    if (recvcounts) free(recvcounts);
+    if (displs) free(displs);
+    if (rank == 0 && global_array) {
+        free(global_array);
+    }
     
     // Завершаем MPI
     MPI_Finalize();

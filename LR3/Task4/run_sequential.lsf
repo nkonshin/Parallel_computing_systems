@@ -6,4 +6,5 @@
 #BSUB -oo seq_output.log
 #BSUB -eo seq_error.log
 
+gcc -O3 sequential_matrix_ops.c -o sequential_matrix_ops
 ./sequential_matrix_ops
