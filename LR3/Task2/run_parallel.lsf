@@ -1,0 +1,14 @@
+#!/bin/bash
+#BSUB -J ParBubbleSort
+#BSUB -P ParallelComputing
+#BSUB -W 00:01
+#BSUB -n 1
+#BSUB -oo par_output.log
+#BSUB -eo par_error.log
+
+
+# Компиляция
+mpicc -O3 parallel_bubble_sort.c -o parallel_bubble_sort
+
+# Запуск на 4 процессах
+mpirun -np 4 ./parallel_bubble_sort
