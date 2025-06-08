@@ -1,12 +1,12 @@
 #!/bin/bash
-#BSUB -J ParBubbleSort
+#BSUB -J ParSum
 #BSUB -P ParallelComputing
 #BSUB -W 00:01
-#BSUB -n 1
+#BSUB -n 4
 #BSUB -oo par_output.log
 #BSUB -eo par_error.log
 
 module load mpi/openmpi-x86_64
-mpicc -O3 parallel_bubble_sort.c -o parallel_bubble_sort
 
-mpirun -np 4 ./parallel_bubble_sort
+mpicc -O3 parallel_sum.c -o parallel_sum
+mpirun -np 4 ./parallel_sum

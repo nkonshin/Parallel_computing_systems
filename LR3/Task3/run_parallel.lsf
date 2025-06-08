@@ -6,19 +6,7 @@
 #BSUB -oo logs/par_output.log
 #BSUB -eo logs/par_error.log
 
-# Загружаем необходимые модули
-module load gcc
-module load openmpi
-
-# Создаем директорию для логов
-mkdir -p logs
-
-# Компилируем программу
+module load mpi/openmpi-x86_64
 mpicc -O3 parallel_array_ops.c -o parallel_array_ops
 
-# Запускаем с разным количеством процессов
-for procs in 1 2 4 8 16; do
-    echo "Запуск на $procs процессах:"
-    mpirun -np $procs ./parallel_array_ops
-    echo "------------------------"
-done
+mpirun -np 4 ./parallel_array_ops

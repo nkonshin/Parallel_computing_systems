@@ -6,5 +6,5 @@
 #BSUB -oo seq_output.log
 #BSUB -eo seq_error.log
 
-
+gcc -O3 sequential_sum.c -o sequential_sum
 ./sequential_sum
