@@ -1,0 +1,24 @@
+#!/bin/bash
+#BSUB -J ParArrOps
+#BSUB -P ParallelComputing
+#BSUB -W 00:01
+#BSUB -n 1
+#BSUB -oo logs/par_output.log
+#BSUB -eo logs/par_error.log
+
+# Загружаем необходимые модули
+module load gcc
+module load openmpi
+
+# Создаем директорию для логов
+mkdir -p logs
+
+# Компилируем программу
+mpicc -O3 parallel_matrix_ops.c -o parallel_matrix_ops
+
+# Запускаем с разным количеством процессов
+for procs in 1 2 4 8 16; do
+    echo "Запуск на $procs процессах:"
+    mpirun -np $procs ./parallel_matrix_ops
+    echo "------------------------"
+done

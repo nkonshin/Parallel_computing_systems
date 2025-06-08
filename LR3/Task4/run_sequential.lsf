@@ -1,0 +1,9 @@
+#!/bin/bash
+#BSUB -J SeqMatOps
+#BSUB -P ParallelComputing
+#BSUB -W 00:01
+#BSUB -n 1
+#BSUB -oo seq_output.log
+#BSUB -eo seq_error.log
+
+./sequential_matrix_ops
