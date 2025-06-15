@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![OpenMP](https://img.shields.io/badge/OpenMP-00567D?style=flat&logo=openmp&logoColor=white)](https://www.openmp.org/)
 [![MPI](https://img.shields.io/badge/MPI-0066CC?style=flat&logo=message&logoColor=white)](https://www.mpi-forum.org/)
+[![CUDA](https://img.shields.io/badge/CUDA-76B900?style=flat&logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-zone)
 
 Репозиторий лабораторных работ по курсу "Параллельные вычислительные системы". Включает реализации различных алгоритмов с использованием технологий параллельного программирования.
 
@@ -26,6 +27,12 @@
   - Параллельные операции над матрицами
   - Оптимизация вычислений
 
+- **LR4** - Параллельные вычисления на GPU с использованием CUDA
+  - Сортировка массива (Bitonic Sort)
+  - Поэлементные операции над массивами
+  - Матричные операции (сложение, вычитание, умножение, деление)
+  - Оптимизация вычислений на GPU
+
 ## Структура репозитория
 
 ```
@@ -42,6 +49,12 @@ Parallel_computing_systems/
 │   ├── Task3/                   # Задание 3
 │   ├── Task4/                   # Задание 4
 │   └── Results/                 # Результаты работы
+├── LR4/                          # Лабораторная работа 4 (CUDA)
+│   ├── Task1/                   # Сортировка массива (Bitonic Sort)
+│   ├── Task2/                   # Операции над массивами
+│   ├── Task3/                   # Поэлементные операции над матрицами
+│   ├── Task4/                   # Матричные операции (сложение, вычитание, умножение, деление)
+│   └── Results/                 # Результаты работы
 ├── LICENSE                      # Лицензия
 └── README.md                    # Этот файл
 ```
@@ -51,11 +64,14 @@ Parallel_computing_systems/
 - **Языки программирования**:
   - C
   - Python
+  - CUDA C
 - **Параллельные технологии**:
   - OpenMP
   - MPI (Message Passing Interface)
+  - CUDA для GPU-вычислений
 - **Инструменты**:
   - GCC/G++ (компилятор)
+  - NVCC (компилятор CUDA)
   - Make (сборка проектов)
 
 ---
