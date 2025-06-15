@@ -37,15 +37,18 @@ int* read_array_from_file(const char* filename, int* size) {
         exit(EXIT_FAILURE);
     }
 
-    // Читаем размер массива
-    if (fscanf(file, "%d", size) != 1) {
-        fprintf(stderr, "Ошибка при чтении размера массива\n");
-        fclose(file);
-        exit(EXIT_FAILURE);
+    // Подсчёт количества чисел в файле
+    int count = 0;
+    int tmp;
+    while (fscanf(file, "%d", &tmp) == 1) {
+        count++;
     }
 
+    // Возврат к началу файла
+    rewind(file);
+
     // Выделяем память под массив
-    int* array = (int*)malloc(*size * sizeof(int));
+    int* array = (int*)malloc(count * sizeof(int));
     if (!array) {
         perror("Ошибка выделения памяти");
         fclose(file);
@@ -53,7 +56,7 @@ int* read_array_from_file(const char* filename, int* size) {
     }
 
     // Читаем элементы массива
-    for (int i = 0; i < *size; i++) {
+    for (int i = 0; i < count; i++) {
         if (fscanf(file, "%d", &array[i]) != 1) {
             fprintf(stderr, "Ошибка при чтении элемента %d\n", i);
             free(array);
@@ -61,6 +64,8 @@ int* read_array_from_file(const char* filename, int* size) {
             exit(EXIT_FAILURE);
         }
     }
+
+    *size = count;
 
     fclose(file);
     return array;
