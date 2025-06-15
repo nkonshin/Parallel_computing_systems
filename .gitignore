@@ -2,3 +2,15 @@
 *.pyc
 __pycache__/
 LR2/~$lab2.docx
+
+# Игнорировать все исполняемые файлы
+*
+!*/
+!*.c
+!*.cu
+!*.py
+!*.h
+!*.txt
+!*.md
+!Makefile
+!.gitignore
