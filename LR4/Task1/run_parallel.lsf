@@ -1,0 +1,17 @@
+#!/bin/bash
+#BSUB -J CUDASum
+#BSUB -P ParallelComputing
+#BSUB -W 00:05
+#BSUB -n 1
+#BSUB -R "span[ptile=1]"
+#BSUB -oo cuda_output.log
+#BSUB -eo cuda_error.log
+
+# Загрузка модуля CUDA
+module load cuda/11.4
+
+# Компиляция CUDA программы
+nvcc -O3 cuda_sum.cu -o cuda_sum
+
+# Запуск программы
+./cuda_sum
