@@ -2,3 +2,7 @@
 *.pyc
 __pycache__/
 LR2/~$lab2.docx
+LR4/Task1/sequential_sum
+LR4/Task2/sequential_merge_sort
+LR4/Task3/sequential_array_ops
+LR4/Task4/sequential_matrix_ops

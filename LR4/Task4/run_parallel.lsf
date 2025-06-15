@@ -1,0 +1,21 @@
+#!/bin/bash
+#BSUB -J CUDAMatrix
+#BSUB -P ParallelComputing
+#BSUB -W 00:1
+#BSUB -n 1
+#BSUB -R "span[ptile=1]"
+#BSUB -o cuda_matrix_output.log
+#BSUB -e cuda_matrix_error.log
+
+# Загрузка модуля CUDA
+module load cuda/11.4
+
+# Компиляция программы
+echo "Компиляция программы..."
+nvcc -O3 cuda_matrix_ops.cu -o cuda_matrix_ops
+
+# Запуск программы
+echo "Запуск программы..."
+./cuda_matrix_ops > results_cuda_matrix.txt
+
+echo "Тестирование завершено. Результаты сохранены в results_cuda_matrix.txt"
