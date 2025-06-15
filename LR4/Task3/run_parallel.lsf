@@ -1,0 +1,21 @@
+#!/bin/bash
+#BSUB -J CUDAMath
+#BSUB -P ParallelComputing
+#BSUB -W 00:01
+#BSUB -n 1
+#BSUB -R "span[ptile=1]"
+#BSUB -o cuda_math_output.log
+#BSUB -e cuda_math_error.log
+
+# Загрузка модуля CUDA
+module load cuda/11.4
+
+# Компиляция программы
+echo "Компиляция программы..."
+nvcc -O3 cuda_array_ops.cu -o cuda_array_ops
+
+# Запуск программы
+echo "Запуск программы..."
+./cuda_array_ops > results_cuda.txt
+
+echo "Тестирование завершено. Результаты сохранены в results_cuda.txt"

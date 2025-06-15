@@ -1,0 +1,30 @@
+#!/bin/bash
+#BSUB -J CUDASort
+#BSUB -P ParallelComputing
+#BSUB -W 00:1
+#BSUB -n 1
+#BSUB -R "span[ptile=1]"
+#BSUB -o cuda_output.log
+#BSUB -e cuda_error.log
+
+# Загрузка модуля CUDA
+module load cuda/11.4
+
+# Компиляция CUDA программы
+echo "Компиляция программы..."
+nvcc -O3 bitonic_sort.cu -o bitonic_sort
+
+# Очищаем файл результатов
+> results.txt
+
+# Массивы для тестирования
+arrays=("array_1mln.txt" "array_5mln.txt" "array_10mln.txt")
+
+# Запуск для каждого массива
+for array in "${arrays[@]}"; do
+    echo "Запуск для $array" | tee -a results.txt
+    ./bitonic_sort $array | tee -a results.txt
+    echo -e "\n------------------------\n" | tee -a results.txt
+done
+
+echo "Тестирование завершено. Результаты сохранены в results.txt"

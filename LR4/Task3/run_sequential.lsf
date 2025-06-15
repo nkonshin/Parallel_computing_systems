@@ -1,0 +1,10 @@
+#!/bin/bash
+#BSUB -J SeqArrOps
+#BSUB -P ParallelComputing
+#BSUB -W 00:01
+#BSUB -n 1
+#BSUB -oo seq_output.log
+#BSUB -eo seq_error.log
+
+gcc -O3 sequential_array_ops.c -o sequential_array_ops
+./sequential_array_ops

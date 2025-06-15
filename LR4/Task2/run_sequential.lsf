@@ -1,0 +1,26 @@
+#!/bin/bash
+#BSUB -J SeqSort
+#BSUB -P ParallelComputing
+#BSUB -W 00:01
+#BSUB -n 1
+#BSUB -o seq_output.log
+#BSUB -e seq_error.log
+
+# Компиляция программы
+echo "Компиляция программы..."
+gcc -O3 sequential_merge_sort.c -o sequential_merge_sort
+
+# Очищаем файл результатов
+> seq_results.txt
+
+# Массивы для тестирования
+arrays=("array_1mln.txt" "array_5mln.txt" "array_10mln.txt")
+
+# Запуск для каждого массива
+for array in "${arrays[@]}"; do
+    echo "Запуск для $array" | tee -a seq_results.txt
+    ./sequential_merge_sort $array | tee -a seq_results.txt
+    echo -e "\n------------------------\n" | tee -a seq_results.txt
+done
+
+echo "Тестирование завершено. Результаты сохранены в seq_results.txt"
